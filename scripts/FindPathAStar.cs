@@ -39,73 +39,74 @@ public class PathMarker {
     }
 }
 
-public class FindPathAStar : MonoBehaviour {
-    // maze size is 27x17, invisible range is 2 on each side
-    public Maze maze;
+public class FindPathAStar : MonoBehaviour {    
+    public Maze maze; // maze (game map) size is 27 x 17, invisible range is 2 on each side
     public GameObject start;
     public GameObject end;
     public GameObject pathP;
-    List<PathMarker> open = new List<PathMarker>();
-    List<PathMarker> closed = new List<PathMarker>();
-    List<Vector3> paths = new List<Vector3>();
-    public List<GameObject> enemyList = new List<GameObject>();
+    public GameObject player_1;
+    public GameObject player_2;
     public GameObject enemyPrefab;
-    public int waveCount = 0;
-    public int finalRound = 2; // set 3 rounds of emenies
+    public GameObject gameoverCanvas; // canvas to display game over, etc. 
+    public GameObject resultCanvas; // canvas to display scores, etc. 
+    public GameObject winnerCanvas; // canvas to display winner, etc. 
+    public GameObject bgMusic;
+    List<Vector3> paths = new List<Vector3>(); // from enemy's start position to target position (home base)
+    List<PathMarker> open = new List<PathMarker>(); // open markers for searching paths
+    List<PathMarker> closed = new List<PathMarker>(); // closed markers for searching paths 
+    public List<GameObject> enemyList = new List<GameObject>(); // list of enemies
+    public int waveCount = 0; // (0 based) round 1, which round the game is currently on
+    public int finalRound = 2; // (0 based) 3 rounds of emenies in total
+    public bool isGamePause = true; 
     public bool isGameOver;
     public bool player_1_wins;
     public bool player_2_wins;
-    public TextMeshProUGUI roundText;
-    public GameObject player_1;
+    public TextMeshProUGUI roundText; // which round is completed
     public TextMeshProUGUI playerScoreText_1;
-    public GameObject player_2;
     public TextMeshProUGUI playerScoreText_2;
-    public GameObject gameoverCanvas;
-    public GameObject resultCanvas;
-    public GameObject winnerCanvas;
-    public TextMeshProUGUI blinkingText;
-    public ParticleSystem confetti;
+    public TextMeshProUGUI blinkingText; // display text "Go!" in the beginning of each round
     public TextMeshProUGUI winnerText;
-    private int enemiesToSpawnIndex = 0;
-    private int spawnPosX;
-    private int spawnPosZ;
-    private int minSpawnRange = 2;
-    private int maxSpawnRangeX = 25;
-    private int maxSpawnRangeZ = 15;
-    private int targetPositionX = 13; // home base
-    private int targetPositionZ = 8;    
-    private float bufferDuration = 2f;
-    private bool beforeCountScoresTimerRunning;
-    private float beforeCountScoresWaitTime;
-    private bool afterCountScoresTimerRunning;
-    private float afterCountScoresWaitTime;
-    private float playerDisplayScore_1 = 0f;
-    private float playerDisplayScore_2 = 0f;
-    private float countScoreSpeed = 5f;
-    private bool bounsRound;
-    private bool done = false;
-    public bool isGamePause = true;
-    private int spawnEnemiesRound_1 = 19; // spawn (spawnEnemiesNumber + 1) emenies
-    private int spawnEnemiesRound_2 = 19; // spawn (spawnEnemiesNumber + 1) emenies
-    private AudioSource mazeAudioSource;
     public AudioClip countingClip;
     public AudioClip winClip;
     public AudioClip gameOverClip;
     public AudioClip gogogoClip;
     public AudioClip weaponsFreeClip;
-    private bool playedWinSoundOnce;
-    private bool playedGameOverSoundOnce;
-    public GameObject bgMusic;
-    private bool playedWinMusic;
     public AudioClip goodJobClip;
     public AudioClip perfectClip;
     public AudioClip allClearClip;
+    public ParticleSystem confetti;
+
+    private int spawnEnemiesRound_1 = 19; // (0 based) spawn 20 emenies in round 1
+    private int spawnEnemiesRound_2 = 19; // (0 based) spawn 20 emenies in round 2
+    private int enemiesToSpawnIndex = 0;
+    private int spawnPosX;
+    private int spawnPosZ;
+    private int minSpawnRange = 2; // min range for X and Z axis
+    private int maxSpawnRangeX = 25;
+    private int maxSpawnRangeZ = 15;
+    private int targetPositionX = 13; // home base X axis
+    private int targetPositionZ = 8; // home base Z axis
+    private float bufferDuration = 2f; // used to have a delay whilst the round starts or ends.
+    private float beforeCountScoresWaitTime;
+    private float afterCountScoresWaitTime;
+    private float countScoreSpeed = 5f;
+    private float playerDisplayScore_1 = 0f;
+    private float playerDisplayScore_2 = 0f;
+    private bool beforeCountScoresTimerRunning;
+    private bool afterCountScoresTimerRunning;
+    private bool bonusRound;
+    private bool done = false; // searching path
+    private bool playedWinSoundOnce;
+    private bool playedGameOverSoundOnce;
+    private bool playedWinMusic;
     private bool playingHonorSound;
+    private AudioSource mazeAudioSource;
+
 
     void Start()
     {
         mazeAudioSource = GetComponent<AudioSource>();
-        ResetTimer();
+        ResetTimer(); // delay timer
         StartCoroutine(NextSpawnEnemies(spawnEnemiesRound_1));
     }
 
@@ -190,7 +191,7 @@ public class FindPathAStar : MonoBehaviour {
             Instantiate(pathP, new Vector3(startNode.location.x * maze.scale, 0.0f, startNode.location.z * maze.scale), Quaternion.identity);
             paths.Reverse();
 
-            enemyList[enemiesToSpawnIndex].GetComponent<EnemyController>().paths.AddRange(paths);
+            enemyList[enemiesToSpawnIndex].GetComponent<EnemyController>().paths.AddRange(paths); // enemy gets a list of paths to the base
 
             paths.Clear();
             RemoveAllMarkers();           
@@ -255,7 +256,7 @@ public class FindPathAStar : MonoBehaviour {
         }
 
         Vector3 spawnLocation = new Vector3(spawnPosX, 0.0f, spawnPosZ);
-        enemyList.Add((GameObject)Instantiate(enemyPrefab, spawnLocation, enemyPrefab.transform.rotation));
+        enemyList.Add((GameObject)Instantiate(enemyPrefab, spawnLocation, enemyPrefab.transform.rotation));  // spawn enemies
         if (waveCount == finalRound)
         {
             enemyList[enemiesToSpawnIndex].name = "Boss";
@@ -294,6 +295,7 @@ public class FindPathAStar : MonoBehaviour {
 
     void CheckGameStateButton()
     {
+        // for selecting buttons by default
         if(player_1_wins || player_2_wins)
         {
             GameObject replayButton = winnerCanvas.transform.Find("Button Panel/Replay Button").gameObject;
@@ -312,7 +314,7 @@ public class FindPathAStar : MonoBehaviour {
         winnerCanvas.SetActive(true);
         StartCoroutine(FadeCanvas(winnerCanvas, 0f, 1f, 2f));
 
-        HideMask();
+        //HideMask(); 
         WinSound();
 
         if (!playedWinMusic)
@@ -322,6 +324,7 @@ public class FindPathAStar : MonoBehaviour {
         }
     }
 
+    // this function is not used in the game for now 
     void HideMask()
     {
         GameObject[] masks;
@@ -342,26 +345,29 @@ public class FindPathAStar : MonoBehaviour {
             }
         }
 
-        if (bounsRound && player_1 != null && player_2 != null)
+        if (bonusRound && player_1 != null && player_2 != null)
         {
+            // bonus round, PVP
             player_1.GetComponent<PlayerController>().PlayerStartPlaying();
             player_2.GetComponent<PlayerController>().PlayerStartPlaying();
         }
         else
         {
+            // round ends, starts counting scores and spawning enemies
             CountPlusSpawn();
         }
 
-        if ((player_1 == null || player_2 == null) && !bounsRound)
+        if ((player_1 == null || player_2 == null) && !bonusRound)
         {
+            // either p1 or p2 is dead
             GameOver();
         }
-        else if ((player_1 == null && player_2 == null) && bounsRound)
+        else if ((player_1 == null && player_2 == null) && bonusRound)
         {
-            // Die together in final
+            // die together in final (bonus round)
             GameOver();
         }
-        else if ((player_1 == null || player_2 == null) && bounsRound)
+        else if ((player_1 == null || player_2 == null) && bonusRound)
         {
             // remove remaining shells in the map
             RemoveAllShells();
@@ -396,6 +402,7 @@ public class FindPathAStar : MonoBehaviour {
             int playerCurrentScores_1 = player_1.GetComponent<PlayerController>().CurrentScores();
             int playerCurrentScores_2 = player_2.GetComponent<PlayerController>().CurrentScores();
 
+            // done counting scores
             if (playerCurrentScores_1 == (int)playerDisplayScore_1 && playerCurrentScores_2 == (int)playerDisplayScore_2)
             {
                 RunAfterCountScoresTimer();
@@ -405,12 +412,14 @@ public class FindPathAStar : MonoBehaviour {
 
                     if (waveCount == finalRound && player_1.activeInHierarchy && player_2.activeInHierarchy)
                     {
-                        bounsRound = true;
+                        // starting PVP
+                        bonusRound = true;
                         resultCanvas.GetComponent<CanvasGroup>().alpha = 0;
                         StartCoroutine(BlinkingText("Final"));
                     }
                     else if (waveCount == finalRound)
                     {
+                        // for single player mode
                         resultCanvas.GetComponent<CanvasGroup>().alpha = 0;
                         winnerText.text = $"<color=#0094FF>P1</color> Wins!";
                         player_1_wins = true;
@@ -424,11 +433,11 @@ public class FindPathAStar : MonoBehaviour {
                         enemiesToSpawnIndex = 0;
                         if (waveCount == finalRound)
                         {
-                            SpawnEnemy(enemiesToSpawnIndex); // Spawn a boss
+                            SpawnEnemy(enemiesToSpawnIndex); // spawn a boss
                         }
                         else
                         {
-                            StartCoroutine(NextSpawnEnemies(spawnEnemiesRound_2)); // Spawn enemies for round 2 
+                            StartCoroutine(NextSpawnEnemies(spawnEnemiesRound_2)); // spawn enemies for round 2 
                         }                        
 
                         player_1.GetComponent<PlayerController>().PlayerStartPlaying();
@@ -452,6 +461,7 @@ public class FindPathAStar : MonoBehaviour {
 
         if (beforeCountScoresWaitTime <= 1 && !playingHonorSound)
         {
+            // says 'good job' etc. before counting
             PlayHonorSound();
         }
 
@@ -461,6 +471,7 @@ public class FindPathAStar : MonoBehaviour {
 
             if (!player_2.activeInHierarchy)
             {
+                // No P2
                 GameObject p2Result = resultCanvas.transform.Find("Panel/Result Body/Right Col BG").gameObject;
                 p2Result.SetActive(false);
             }
@@ -580,9 +591,10 @@ public class FindPathAStar : MonoBehaviour {
         fading = false;
     }
 
-    IEnumerator NextSpawnEnemies(int waveCount)
+    IEnumerator NextSpawnEnemies(int numberOfEnemies)
     {
-        while (enemiesToSpawnIndex != (waveCount + 1))
+        // 0 based
+        while (enemiesToSpawnIndex != (numberOfEnemies + 1))
         {            
             SpawnEnemy(enemiesToSpawnIndex);
             enemiesToSpawnIndex++;
@@ -592,7 +604,7 @@ public class FindPathAStar : MonoBehaviour {
 
     IEnumerator BlinkingText(string text = "Go!")
     {
-        mazeAudioSource.clip = (bounsRound) ? weaponsFreeClip : gogogoClip;
+        mazeAudioSource.clip = (bonusRound) ? weaponsFreeClip : gogogoClip;
         mazeAudioSource.Play();
 
         int blinkTime = 0;
@@ -616,9 +628,9 @@ public class FindPathAStar : MonoBehaviour {
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
-    public bool CheckBounsRound()
+    public bool CheckbonusRound()
     {
-        return bounsRound;
+        return bonusRound;
     }
 
     public void StartPlaying()
@@ -653,12 +665,6 @@ public class FindPathAStar : MonoBehaviour {
     }
 
     void Update() {
-
-        //if (Input.GetKeyDown(KeyCode.P)) BeginSearch();
-
-        //if (Input.GetKeyDown(KeyCode.C) && !done) Search(lastPos);
-
-        //if (Input.GetKeyDown(KeyCode.M)) GetPath();
         CheckDeadTanks();
         CheckGameStateButton();
     }

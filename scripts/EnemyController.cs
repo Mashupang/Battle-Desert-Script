@@ -5,46 +5,48 @@ using UnityEngine.UI;
 
 public class EnemyController : MonoBehaviour
 {
-    private int bossHP = 20;
-    public int finalWaveHP;
-    private int maxfinalWaveHP;
-    public Transform shellSpawnPoint;
+    public int finalWaveHP; // boss HP
     public GameObject shellPrefab;
-    public List<Vector3> paths = new List<Vector3>();
-    private List<GameObject> enemyList;
+    public Transform shellSpawnPoint;
+    public AudioClip damageClip;
+    public List<Vector3> paths = new List<Vector3>(); // paths to the home base
+
+    private int bossHP = 20;
+    private int maxfinalWaveHP;
     private int currentWave;
     private int selfIndexOfEnemyList;
     private int pathCount;
     private float moveSpeed;
     private float minMoveSpeed = 0.5f;
-    public float defaultShellTimer = 3.0f;
-    private float shellTimer;
-    public bool isMoving;
-    public bool insideMap;
-    private bool enemyInTheWay;
-    private Vector3 bossHpPos = new Vector3(0, 1, 0.7f);
+    private float shellTimer; // wait time to shoot next bullet
+    private float defaultShellTimer = 3.0f; 
     private float enemyColorRGB;
     private bool gameIsPause;
+    private bool isMoving;
+    private bool insideMap; // visible for players
+    private bool enemyInTheWay; // another enemy tank in front of an enemy 
+    private Vector3 bossHpPos = new Vector3(0, 1, 0.7f);
     private ParticleSystem dustTrail;
+    private AudioSource enemyAudioSource;
+    private List<GameObject> enemyList;
+
     Coroutine moveCoroutine;
     RaycastHit closestHit;
     RaycastHit[] hits;
-    private AudioSource enemyAudioSource;
-    public AudioClip damageClip;
 
     void OnEnable()
     {
-        shellTimer = defaultShellTimer;
+        shellTimer = defaultShellTimer; // enemy is ready to fire a bullet 
     }
 
     void Start()
     {
         enemyAudioSource = GetComponent<AudioSource>();
         currentWave = GameObject.Find("Maze").GetComponent<FindPathAStar>().waveCount;
-        moveSpeed = minMoveSpeed + (minMoveSpeed * currentWave);
-        defaultShellTimer = defaultShellTimer - currentWave;
+        moveSpeed = minMoveSpeed + (minMoveSpeed * currentWave); //  different moving speed 
+        defaultShellTimer = defaultShellTimer - currentWave; //  different firing rate
         pathCount = paths.Count;
-        StartCoroutine(moveObject());
+        StartCoroutine(MoveEnemy());
         isMoving = true;
         finalWaveHP = bossHP;
         maxfinalWaveHP = bossHP;        
@@ -112,7 +114,7 @@ public class EnemyController : MonoBehaviour
         if(gameObject.name == "Boss")
         {            
             GameObject healthCanvas = GameObject.Find("Health Canvas");            
-            healthCanvas.transform.localPosition = transform.localPosition + bossHpPos;
+            healthCanvas.transform.localPosition = transform.localPosition + bossHpPos; // HP bar is right above the boss
             healthCanvas.GetComponent<CanvasGroup>().alpha = (insideMap) ? 1 : 0;
         }
     }
@@ -128,16 +130,23 @@ public class EnemyController : MonoBehaviour
     }
 
     bool CheckSafeDistance()
-    {        
+    {
+        // prevent enemy tanks from overlapping each other
         for (int i = 0; i < enemyList.Count; i++)
         {
             if (enemyList[i] == null) { continue; }
             else if (Vector3.Distance(transform.position, enemyList[i].transform.position) < 2.0f && enemyList[i].GetComponent<EnemyController>().pathCount < pathCount)
             {
+                // enemy tank will stop moving under these conditions have met:
+				// 1. too close to each other
+				// 2. other enemy tanks are closer to the home base
                 return false;
             }
             else if (enemyList[i].GetComponent<EnemyController>().pathCount == pathCount && i < selfIndexOfEnemyList)
             {
+                // enemy tank will also stop moving when
+                // 1. other enemy tanks have same distance between current pos and the base pos
+                // 2. other enemy tanks have lower index numbers
                 return false;
             }
         }
@@ -148,12 +157,12 @@ public class EnemyController : MonoBehaviour
     bool InsideMap()
     {
         bool insideMapBool;
-        // visible maze size is 23x13, invisible range is 2 on each side
+        // visible maze size is 23 x 13, invisible range is 2 on each side
         insideMapBool = (transform.position.x >= 2 && transform.position.x <= 24 && transform.position.z <= 14 && transform.position.z >= 2) ? true : false;
         return insideMapBool;
     }
 
-    IEnumerator moveObject()
+    IEnumerator MoveEnemy()
     {
         for (int i = 0; i < paths.Count; i++)
         {             
@@ -190,6 +199,7 @@ public class EnemyController : MonoBehaviour
 
     public void DamageHP()
     {
+        // for boss only
         finalWaveHP--;
         Image greenHealthBar = GameObject.Find("Health Canvas").transform.GetChild(1).gameObject.GetComponent<Image>();
         greenHealthBar.fillAmount = (float)finalWaveHP / (float)maxfinalWaveHP;

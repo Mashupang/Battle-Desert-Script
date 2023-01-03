@@ -5,51 +5,50 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
     public string inputID;
-    public Transform movePoint;
+    public Transform movePoint; // for detecting obstacles
     public Transform shellSpawnPoint;
     public GameObject shellPrefab;
+    public AudioClip levelUpClip;
+
+    private int deadEnemies = 0; // destroyed enemies
+    private int level = 0; // current player's level
+    private int levelUpExp = 10; // destroy 10 enemy tanks to level up 
+    private int maxLevel = 3;
+    private int divideShellTimerBy = 2;
+    private int blinkTimes = 10;
+    private float blinkDurduration = 0.05f;
     private float horizontalInput;
     private float verticalInput;
     private float moveSpeed = 3f;    
-    private float minRange = 2f;
-    private float maxRangeX = 24f;
-    private float maxRangeZ = 14f;
-    private float initLevelPosX = 0.2f;
-    private float initLevelPosY = 1f;
-    private float initLevelPosZ1 = -0.4f;
-    private float initLevelPosZ2 = -0.3f;
-    private float initLevelPosZ3 = -0.2f;
-    private float defaultShellTimer = 1f;
-    private int divideShellTimerBy = 2;
-    private float minimumShellTimer = 0f;
-    private float shellTimer;
+    private float minRange = 2f; // min moving range XZ
+    private float maxRangeX = 24f; // max moving range X
+    private float maxRangeZ = 14f; // max moving range Z
+    private float initLevelPosX = 0.2f; // level badge X axis
+    private float initLevelPosY = 1f; // level badge Y axis
+    private float initLevelPosZ1 = -0.4f; // level 1 badge Z axis
+    private float initLevelPosZ2 = -0.3f; // level 2 badge Z axis
+    private float initLevelPosZ3 = -0.2f; // level 3 badge Z axis
+    private float shellTimer; // wait time to shoot next bullet
+    private float defaultShellTimer = 1f; 
+    private float minimumShellTimer = 0f;    
+    private float safeDistance = 1f; // distance to other objects
     private float turnAngle = 90;
-    private int deadEnemies = 0;
-    private int level = 0;
-    private int levelUpExp = 10;
-    private int maxLevel = 3;
-    private bool isPlaying;
-    private bool isGamePause;
-    private Vector3 player1Position = new Vector3(12, 0, 7);
-    private Vector3 player2Position = new Vector3(14, 0, 7);
-    private List<GameObject> levelList = new List<GameObject>();
-    private float safeDistance = 1f;
+    private float holdKeyTime = 0.15f; // hold moving keys
+    private float holdTimer;
     private bool holdingKey;
     private bool holdingKey_p1;
     private bool holdingKey_p2;
-    private float holdKeyTime = 0.15f;
-    private float holdTimer;
+    private bool isPlaying;
+    private bool isGamePause;
     private bool startMoving;
-    public bool tankComing;
-    private Color p1Color = new Color(0f, 0.5803922f, 1f, 1f);
-    private Color p2Color = new Color(0.745283f, 0f, 0f, 1f);
-    private float blinkDurduration = 0.05f;
-    private int blinkTimes = 10;
-
+    private bool enemyInFront; 
+    private Vector3 player1Position = new Vector3(12, 0, 7); // p1 start pos
+    private Vector3 player2Position = new Vector3(14, 0, 7); // p2 start pos
+    private Color p1Color = new Color(0f, 0.5803922f, 1f, 1f); // blue
+    private Color p2Color = new Color(0.745283f, 0f, 0f, 1f); // red
     private AudioSource playerAudioSource;
-    public AudioClip levelUpClip;
+    private List<GameObject> levelList = new List<GameObject>();
 
-    // Start is called before the first frame update
     void Start()
     {
         playerAudioSource = GetComponent<AudioSource>();
@@ -69,21 +68,21 @@ public class PlayerController : MonoBehaviour
         }
         for(int i = 0; i < maxLevel; i++)
         {
+            // add player's levels badges to a list
             levelList.Add(this.gameObject.transform.GetChild(i + 1).gameObject);
         }
     }
 
     void OnEnable()
     {
-        shellTimer = defaultShellTimer;
+        shellTimer = defaultShellTimer; // player is ready to fire a bullet 
     }
 
-    // Update is called once per frame
     void Update()
     {
         movePoint.GetComponent<SphereCollider>().enabled = (isPlaying) ? true : false ;
 
-        tankComing = movePoint.gameObject.GetComponent<MovePointController>().tankComing;
+        enemyInFront = movePoint.gameObject.GetComponent<MovePointController>().enemyInFront;
 
         holdingKey_p2 = (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.D));
         holdingKey_p1 = (Input.GetKey(KeyCode.UpArrow) || Input.GetKey(KeyCode.DownArrow) || Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.RightArrow));
@@ -187,12 +186,13 @@ public class PlayerController : MonoBehaviour
             verticalInput = Input.GetAxisRaw("Vertical" + inputID);
 
 
-            if (tankComing)
+            if (enemyInFront)
             {
                 //Vector3 canNotReachPos = movePoint.position;
                 //GameObject.Find("Maze").GetComponent<BlackMaskController>().CoverMask(canNotReachPos);
 
-                movePoint.position = new Vector3(Mathf.Round(transform.position.x), 0, Mathf.Round(transform.position.z)); ;
+                // prevent player from getting overlapped
+                movePoint.position = new Vector3(Mathf.Round(transform.position.x), 0, Mathf.Round(transform.position.z));
                 transform.position = movePoint.position;
 
             }
@@ -202,21 +202,24 @@ public class PlayerController : MonoBehaviour
 
                 Vector3 playerPos = transform.position;
                 Vector3 movePointPos = movePoint.position;
+
                 //GameObject.Find("Maze").GetComponent<BlackMaskController>().PlayersVisibility(playerPos, movePointPos, inputID);
             }
 
 
-            RaycastHit hit;
-            // Ray check for collisions in 1 unit safe distance.             
+            RaycastHit hit;        
 
             if (!Physics.Raycast(movePoint.position, new Vector3(horizontalInput, 0f, verticalInput), out hit, safeDistance) && startMoving)
             {
+                // movePoint moves first, if no obstacles, then player moves 
                 if (Vector3.Distance(transform.position, movePoint.position) == 0f)
                 {
+                    // move left or right 
                     if (Mathf.Abs(horizontalInput) == 1f && Mathf.Abs(verticalInput) != 1f)
                     {
                         movePoint.position += new Vector3(horizontalInput, 0f, 0f);
                     }
+                    // move up or down 
                     else if (Mathf.Abs(verticalInput) == 1f && Mathf.Abs(horizontalInput) != 1f)
                     {
                         movePoint.position += new Vector3(0f, 0f, verticalInput);
@@ -272,6 +275,7 @@ public class PlayerController : MonoBehaviour
 
     IEnumerator PlayerPromotedEffect()
     {
+        // level up!
         int blinkTime = 0;
         MeshRenderer[] renderers = gameObject.transform.Find("TankRenderers").GetComponentsInChildren<MeshRenderer>();
         Color blinkColor = new Color(1f, 1f, 1f, 1f);

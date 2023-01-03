@@ -4,10 +4,11 @@ using UnityEngine;
 
 public class FireAudioController : MonoBehaviour
 {
-    private AudioSource fireAudioSource;
     public AudioClip fireClip;
+
+    private AudioSource fireAudioSource;
     private float delayDestroyTime = 3f;
-    // Start is called before the first frame update
+
     void Start()
     {
         fireAudioSource = GetComponent<AudioSource>();

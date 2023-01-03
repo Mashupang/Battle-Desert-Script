@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class MovePointController : MonoBehaviour
 {
-    public bool tankComing;    
+    public bool enemyInFront;    
     private string otherPlayerName;
     private List<GameObject> enemyList;
     private bool enemyNear;
@@ -36,7 +36,7 @@ public class MovePointController : MonoBehaviour
         enemyNear = CheckNearEnemy();
         if (!enemyNear)
         {
-            tankComing = false;
+            enemyInFront = false;
         }
     }
 
@@ -44,7 +44,7 @@ public class MovePointController : MonoBehaviour
     {
         if (other.gameObject.tag == "Enemy" || other.gameObject.name == otherPlayerName)
         {
-            tankComing = true;
+            enemyInFront = true;
         }
     }
 
@@ -52,7 +52,7 @@ public class MovePointController : MonoBehaviour
     {
         if (other.gameObject.tag == "Enemy" || other.gameObject.name == otherPlayerName)
         {
-            tankComing = false;
+            enemyInFront = false;
         }
     }
 }

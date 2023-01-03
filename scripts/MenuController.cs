@@ -16,27 +16,27 @@ public class MenuController : MonoBehaviour
     public GameObject pointer_htp;
     public GameObject backToMenuButton;
     public GameObject maze;
+    public GameObject bgMusic;
+    public AudioClip slideClip;
+    public AudioClip selectButtonClip;
     GameObject currentSelected;
     GameObject lastSelected;
     Transform titlePanel;
     Transform menuPanel;
     Transform htpPanel;
-    private float shiftPanelPosY = 360; // screen height 1080p * 1/3
-    private float shiftPanelOffsetY = 100;
+
     private int currentSelectButtonOrder = 1;
+    private float slidePanelDuration = 0.4f;
+    private float shiftPanelPosY = 360; // target screen height 1080p * 1/3
+    private float shiftPanelOffsetY = 100;
     private bool showHTP;
+    private bool panelIsSliding;
     private TextMeshProUGUI player1Text;
     private TextMeshProUGUI player2Text;
     private TextMeshProUGUI htpText;
     private Color selectedButtonColor = new Color(1f, 0.7333f, 0.3019f, 1f);
-    private float slidePanelDuration = 0.4f;
     private AudioSource menuAudioSource;
-    public AudioClip slideClip;
-    public AudioClip selectButtonClip;
-    private bool panelIsSliding;
-    public GameObject bgMusic;
 
-    // Start is called before the first frame update
     void Start()
     {
         menuAudioSource = GetComponent<AudioSource>();
@@ -52,7 +52,6 @@ public class MenuController : MonoBehaviour
         htpText = GameObject.Find("HTP Button Text").GetComponent<TextMeshProUGUI>();
     }
 
-    // Update is called once per frame
     void Update()
     {
         currentSelected = EventSystem.current.currentSelectedGameObject;        

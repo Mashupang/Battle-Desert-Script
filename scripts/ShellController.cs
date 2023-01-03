@@ -4,15 +4,16 @@ using UnityEngine;
 
 public class ShellController : MonoBehaviour
 {
-    private float shellForce = 1000f;
-    private GameObject playerObject;
-    public ParticleSystem tankExplosion;
-    public ParticleSystem shellExplosion;
     public GameObject bustedBasePrefeb;
     public GameObject fireAudioPrefab;
-    public GameObject explosionAudioPrefab;    
-    private AudioSource shellAudioSource;
+    public GameObject explosionAudioPrefab;
     public AudioClip fireClip;
+    public ParticleSystem tankExplosion;
+    public ParticleSystem shellExplosion;
+
+    private float shellForce = 1000f; // bullet move speed
+    private GameObject playerObject;
+    private AudioSource shellAudioSource;
 
     void Start()
     {
@@ -83,7 +84,7 @@ public class ShellController : MonoBehaviour
             Instantiate(bustedBasePrefeb, collision.gameObject.transform.position, transform.rotation * Quaternion.Euler(0f, 0f, 0f));
             ShellExplosion();
             DestroyBoth();           
-            if (!GameObject.Find("Maze").GetComponent<FindPathAStar>().CheckBounsRound())
+            if (!GameObject.Find("Maze").GetComponent<FindPathAStar>().CheckbonusRound())
             {
                 GameObject.Find("Maze").GetComponent<FindPathAStar>().GameOver();
             }
@@ -94,6 +95,7 @@ public class ShellController : MonoBehaviour
         {
             ShellExplosion();
             DestroyBoth();
+            // update map marker
             GameObject.Find("Maze").GetComponent<Maze>().MarkWallZero(collision.gameObject.transform.position);
         }
 

@@ -43,33 +43,28 @@ public class Maze : MonoBehaviour
                                             new MapLocation(0,1),
                                             new MapLocation(-1,0),
                                             new MapLocation(0,-1) };
-    public int width = 27; //x length
-    public int depth = 17; //z length
+    public int width = 27; // map x length
+    public int depth = 17; // map z length
     public int[,] map;
     public int scale = 1;
+    public List<GameObject> prefabList = new List<GameObject>(); // 2 rocks prefabs
+    public GameObject wallPrefab1;
+    public GameObject wallPrefab2;
 
     private List<GameObject> wallsList = new List<GameObject>();
     private List<Vector3> wallsPosList = new List<Vector3>();
-    public List<GameObject> prefabList = new List<GameObject>();
     private int[] indexTargetWall;
     private int[] indexInnerWall;
-    public GameObject wallPrefeb1;
-    public GameObject wallPrefeb2;
 
-    // Start is called before the first frame update
     void Start()
     {
-        prefabList.Add(wallPrefeb1);
-        prefabList.Add(wallPrefeb2);
+        prefabList.Add(wallPrefab1);
+        prefabList.Add(wallPrefab2);
         InitialiseMap();
         //Generate();
         DrawMap();
         foreach (var gameObj in FindObjectsOfType(typeof(GameObject)) as GameObject[])
         {
-            //if (gameObj.name == "Cube")
-            //{
-            //    wallsList.Add(gameObj);
-            //}
             if (gameObj.name == "Wall1(Clone)" || gameObj.name == "Wall2(Clone)")
             {
                 gameObj.tag = "Wall";
@@ -516,7 +511,7 @@ public class Maze : MonoBehaviour
             for (int x = 0; x < width; x++)
             {
                if(Random.Range(0,100) < 50)
-                 map[x, z] = 0;     //1 = wall  0 = corridor
+                 map[x, z] = 0; //1 = wall  0 = corridor
             }
         
     }
@@ -529,16 +524,10 @@ public class Maze : MonoBehaviour
             {
                 if (map[x, z] == 1)
                 {
-                    //Vector3 pos = new Vector3(x * scale, 0, z * scale);
+                    // generate rocks 
                     Vector3 pos = new Vector3(x * scale, 0, z * scale);
-                    //GameObject wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                    int prefabIndex = Random.Range(0, 2);
-
+                    int prefabIndex = Random.Range(0, 2);                    
                     Instantiate(prefabList[prefabIndex], new Vector3(x * scale, -0.5f, z * scale), transform.rotation * Quaternion.Euler(0f, 0f, 0f));
-                    //wall.tag = "Wall";
-                    //wall.transform.localScale = new Vector3(scale, scale, scale);
-                    //wall.transform.position = pos;
-
                 }
             }
         }
@@ -571,25 +560,6 @@ public class Maze : MonoBehaviour
     {
         return CountSquareNeighbours(x,z) + CountDiagonalNeighbours(x,z);
     }
-
-
-    void CheckWalls()
-    {        
-        for (int i = 0; i < wallsList.Count; i++)
-        {
-            if (wallsList[i] == null)
-            {
-                map[(int)wallsPosList[i].x, (int)wallsPosList[i].z] = 0;
-            }
-        }
-
-    }
-
-    void Update()
-    {
-        //CheckWalls();
-    }
-
 
     public void MarkWallZero(Vector3 wallPos)
     {

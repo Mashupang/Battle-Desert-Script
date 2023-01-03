@@ -4,10 +4,11 @@ using UnityEngine;
 
 public class ExplosionAudioController : MonoBehaviour
 {
-    private AudioSource explosionAudioSource;
     public AudioClip explosionClip;
+
+    private AudioSource explosionAudioSource;
     private float delayDestroyTime = 2f;
-    // Start is called before the first frame update
+
     void Start()
     {
         explosionAudioSource = GetComponent<AudioSource>();
